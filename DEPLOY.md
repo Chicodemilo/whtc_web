@@ -82,10 +82,7 @@ Internet
    ```
    ssh root@134.199.212.172 "cd ~/whtc_web && docker compose up -d --build"
    ```
-4. Restore DB into container (volumes reset on rebuild):
-   ```
-   ssh root@134.199.212.172 "docker cp ~/whtc_web/data/whtc.db whtc_web-whtc-1:/app/data/whtc.db"
-   ```
+4. Data and music persist on the host (`~/whtc_web/data/` and `~/whtc_web/music/`) — no restore needed after rebuild
 
 ## When Clubbie redeploys
 - The combined nginx config is in Clubbie's repo (`nginx/nginx.prod.conf`) — it includes both domains
@@ -93,9 +90,14 @@ Internet
 - No manual steps needed — both sites survive a Clubbie deploy
 
 ## Music files
-- Not in the container image — stored in Docker volume `whtc_music`
-- To upload music, copy into the running container:
+- Stored on host at `~/whtc_web/music/`, bind-mounted into container
+- Survives rebuilds and redeploys — no need to re-copy
+- Upload via admin page at /breakdown, or manually:
   ```
-  docker cp /path/to/files/. whtc_web-whtc-1:/app/music/
+  scp -r local_files/ root@134.199.212.172:~/whtc_web/music/artist_folder/
   ```
-- Or upload via admin page at /breakdown
+
+## Persistent data
+- **Database:** `~/whtc_web/data/whtc.db` (host-mounted, survives rebuilds)
+- **Music:** `~/whtc_web/music/` (host-mounted, survives rebuilds)
+- **Credentials:** `~/whtc_web/.env` (on host, not in container image)

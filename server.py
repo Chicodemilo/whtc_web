@@ -203,7 +203,7 @@ class WHTCHandler(BaseHTTPRequestHandler):
 
         # Music files (served from music dir, not static)
         if path.startswith('/music/'):
-            self.serve_music(path[7:])  # strip /music/
+            self.serve_music(urllib.parse.unquote(path[7:]))
             return
 
         # Static files
