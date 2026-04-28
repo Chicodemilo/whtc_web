@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHTC BED – Admin</title>
+<link rel="icon" href="/static/favicon.ico">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    color: #c8b89a;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 8, 6, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .header h1 {
+    font-family: 'Special Elite', cursive;
+    font-size: 22px;
+    color: #e8d5b5;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header .sub {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 2px;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    padding: 14px 24px;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .toolbar button, .toolbar label {
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .toolbar button:hover, .toolbar label:hover {
+    border-color: #c8b89a;
+    background: #1a1714;
+  }
+
+  .toolbar .save-btn {
+    border-color: #6b8a5e;
+    color: #8ab87a;
+  }
+
+  .toolbar .save-btn:hover {
+    background: #1a2218;
+    border-color: #8ab87a;
+  }
+
+  .toolbar .export-btn {
+    border-color: #5e6b8a;
+    color: #7a8ab8;
+  }
+
+  .toolbar .export-btn:hover {
+    background: #181a22;
+    border-color: #7a8ab8;
+  }
+
+  .toolbar input[type="file"] { display: none; }
+
+  .toolbar .spacer { flex: 1; }
+
+  .stats {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 1px;
+    padding: 0 4px;
+  }
+
+  /* Filter tabs */
+  .filters {
+    padding: 10px 24px;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    gap: 6px;
+  }
+
+  .filters button {
+    background: none;
+    border: 1px solid #1a1a1a;
+    color: #555;
+    padding: 5px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  .filters button.active {
+    border-color: #c8b89a;
+    color: #c8b89a;
+  }
+
+  .filters button:hover { border-color: #333; color: #888; }
+  .filters button.active:hover { border-color: #c8b89a; color: #c8b89a; }
+
+  /* Add track section */
+  .add-section {
+    padding: 20px 24px;
+    border-top: 1px solid #1a1a1a;
+    border-bottom: 1px solid #1a1a1a;
+    background: #0c0c0a;
+  }
+
+  .add-section h3 {
+    font-family: 'Special Elite', cursive;
+    font-size: 14px;
+    color: #e8d5b5;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+
+  .add-step {
+    margin-bottom: 14px;
+    display: none;
+  }
+
+  .add-step.visible { display: block; }
+
+  .add-step .step-label {
+    font-size: 9px;
+    color: #444;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .browse-btn {
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 10px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .browse-btn:hover {
+    border-color: #c8b89a;
+    background: #1a1714;
+  }
+
+  /* Batch table */
+  .batch-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .batch-header .batch-count {
+    font-size: 11px;
+    color: #666;
+  }
+
+  .batch-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+  }
+
+  .batch-table th {
+    font-size: 9px;
+    color: #444;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .batch-table th.center { text-align: center; }
+
+  .batch-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #111;
+    vertical-align: middle;
+  }
+
+  .batch-table tr:hover { background: #111; }
+
+  .batch-table input[type="text"],
+  .batch-table select {
+    background: #0a0a0a;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 5px 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    width: 100%;
+  }
+
+  .batch-table input:focus, .batch-table select:focus {
+    outline: none;
+    border-color: #c8b89a;
+  }
+
+  .batch-table select {
+    cursor: pointer;
+  }
+
+  .batch-table select option {
+    background: #0a0a0a;
+    color: #c8b89a;
+  }
+
+  .batch-table .col-title { width: 30%; }
+  .batch-table .col-artist { width: 22%; }
+  .batch-table .col-new-artist { width: 18%; }
+  .batch-table .col-dur { width: 60px; text-align: right; }
+  .batch-table .col-file { width: 20%; font-size: 10px; color: #444; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+  .batch-table .col-preview { width: 36px; text-align: center; }
+  .batch-table .col-remove { width: 36px; text-align: center; }
+
+  .batch-table .dur-val {
+    font-size: 11px;
+    color: #8ab87a;
+  }
+
+  .batch-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .batch-actions button {
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 8px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .batch-actions button:hover {
+    border-color: #c8b89a;
+    background: #1a1714;
+  }
+
+  .batch-actions .add-all-btn {
+    border-color: #6b8a5e;
+    color: #8ab87a;
+    font-size: 12px;
+    padding: 10px 20px;
+  }
+
+  .batch-actions .add-all-btn:hover {
+    background: #1a2218;
+    border-color: #8ab87a;
+  }
+
+  .batch-actions .cancel-btn {
+    border-color: #4a3a2a;
+    color: #8a7a6a;
+  }
+
+  .batch-actions .add-more-btn {
+    border-color: #5e6b8a;
+    color: #7a8ab8;
+  }
+
+  .batch-actions .add-more-btn:hover {
+    background: #181a22;
+    border-color: #7a8ab8;
+  }
+
+  /* Mini preview button */
+  .mini-preview-btn {
+    background: none;
+    border: 1px solid #333;
+    color: #c8b89a;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .mini-preview-btn:hover {
+    border-color: #c8b89a;
+    background: #1a1a1a;
+  }
+
+  .mini-preview-btn.playing {
+    border-color: #8ab87a;
+    color: #8ab87a;
+  }
+
+  /* Mini remove button */
+  .mini-remove-btn {
+    background: none;
+    border: 1px solid #2a1a1a;
+    color: #8a4a4a;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .mini-remove-btn:hover {
+    border-color: #b85a5a;
+    color: #b85a5a;
+    background: #1a1010;
+  }
+
+  /* Track table */
+  .track-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .track-table th {
+    font-size: 9px;
+    color: #444;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 12px 24px 8px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .track-table th.center { text-align: center; }
+
+  .track-table td {
+    padding: 10px 24px;
+    border-bottom: 1px solid #0f0f0f;
+    vertical-align: middle;
+  }
+
+  .track-table tr { transition: background 0.1s; }
+  .track-table tr:hover { background: #111; }
+
+  .track-table tr.inactive { opacity: 0.4; }
+  .track-table tr.inactive:hover { opacity: 0.7; }
+
+  .track-table .num {
+    font-size: 10px;
+    color: #333;
+    width: 40px;
+    text-align: right;
+    padding-right: 16px;
+  }
+
+  .track-table .title-cell {
+    font-size: 12px;
+    color: #e8d5b5;
+  }
+
+  .track-table .src-cell {
+    font-size: 10px;
+    color: #444;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-table .dur-cell {
+    font-size: 11px;
+    color: #555;
+    width: 50px;
+    text-align: right;
+  }
+
+  .track-table .date-cell {
+    font-size: 10px;
+    color: #444;
+    width: 75px;
+    white-space: nowrap;
+  }
+
+  .track-table .status-cell {
+    width: 70px;
+    text-align: center;
+  }
+
+  .track-table .actions-cell {
+    width: 60px;
+    text-align: center;
+  }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 18px;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 9px;
+    transition: all 0.2s;
+  }
+
+  .toggle .slider::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 2px;
+    top: 2px;
+    background: #555;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .toggle input:checked + .slider {
+    background: #1a2218;
+    border-color: #6b8a5e;
+  }
+
+  .toggle input:checked + .slider::before {
+    transform: translateX(18px);
+    background: #8ab87a;
+  }
+
+  .toggle.shazam input:checked + .slider {
+    background: #1a1a22;
+    border-color: #5e6b8a;
+  }
+
+  .toggle.shazam input:checked + .slider::before {
+    background: #7a8ab8;
+  }
+
+  /* Delete button */
+  .del-check {
+    width: 15px;
+    height: 15px;
+    accent-color: #b85a5a;
+    cursor: pointer;
+  }
+
+  .toolbar .delete-sel-btn {
+    border-color: #8a4a4a;
+    color: #b85a5a;
+    display: none;
+  }
+
+  .toolbar .delete-sel-btn:hover {
+    background: #1a1010;
+    border-color: #b85a5a;
+  }
+
+  /* Conflict modal */
+  .conflict-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .conflict-overlay.show { display: flex; }
+
+  .conflict-modal {
+    background: #0a0a0a;
+    border: 1px solid #2a2520;
+    padding: 24px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .conflict-modal h3 {
+    font-family: 'Special Elite', cursive;
+    color: #e8d5b5;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .conflict-modal .summary {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .conflict-row {
+    border: 1px solid #1a1a1a;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .conflict-row .conflict-title {
+    font-size: 12px;
+    color: #e8d5b5;
+    margin-bottom: 8px;
+  }
+
+  .conflict-row .conflict-detail {
+    font-size: 10px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  .conflict-row .conflict-detail span { color: #888; }
+
+  .conflict-row .conflict-choices {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .conflict-row .conflict-choices button {
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 4px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .conflict-row .conflict-choices button:hover { border-color: #c8b89a; }
+  .conflict-row .conflict-choices button.chosen { background: #1a2218; border-color: #6b8a5e; color: #8ab87a; }
+
+  .conflict-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .conflict-actions button {
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 8px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .conflict-actions button:hover { border-color: #c8b89a; }
+
+  .conflict-actions .apply-btn { border-color: #6b8a5e; color: #8ab87a; }
+  .conflict-actions .apply-btn:hover { background: #1a2218; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    background: #1a2218;
+    border: 1px solid #6b8a5e;
+    color: #8ab87a;
+    padding: 12px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .toast.error {
+    background: #221a1a;
+    border-color: #8a5e5e;
+    color: #b87a7a;
+  }
+
+  /* Dirty indicator */
+  .dirty-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #b8a07a;
+    border-radius: 50%;
+    margin-left: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .dirty-dot.show { opacity: 1; }
+
+  /* Footer */
+  .footer {
+    padding: 6px 24px;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    bottom: 0;
+    background: rgba(10, 8, 6, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 50;
+  }
+
+  .footer a.footer-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+  }
+
+  .footer a.footer-link img {
+    height: 55px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+
+  .footer a.footer-link span {
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.15s;
+  }
+
+  .footer a.footer-link:hover img { opacity: 0.8; }
+  .footer a.footer-link:hover span { color: #c8b89a; }
+
+</style>
+</head>
+<body>
+
+<div class="sticky-top">
+<div class="header">
+  <h1>WHTC BED<span class="dirty-dot" id="dirtyDot" title="Unsaved changes"></span></h1>
+  <div class="sub">Track Admin</div>
+</div>
+<div style="padding:10px 24px;border-bottom:1px solid #1a1a1a;">
+  <input type="text" id="searchBox" placeholder="Search tracks..." oninput="onSearch()" style="
+    background:transparent;border:1px solid #2a2520;color:#c8b89a;padding:8px 12px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;
+    letter-spacing:1px;
+  ">
+</div>
+</div>
+
+<div class="toolbar">
+  <button class="delete-sel-btn" id="deleteSelBtn" onclick="deleteSelected()">Delete Selected</button>
+  <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+  <label class="export-btn">Import CSV<input type="file" id="csvImport" accept=".csv" onchange="importCSV(event)"></label>
+  <button class="export-btn" onclick="logout()">Logout</button>
+  <div class="spacer"></div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="filters">
+  <button class="active" onclick="setFilter('all', this)">All</button>
+  <button onclick="setFilter('active', this)">Active</button>
+  <button onclick="setFilter('inactive', this)">Inactive</button>
+</div>
+
+<div class="add-section">
+  <h3>Add Tracks</h3>
+
+  <!-- Step 1: Browse for files -->
+  <div class="add-step visible" id="step1">
+    <div class="step-label">Select one or more audio files</div>
+    <button class="browse-btn" onclick="browseFiles()">Browse for files...</button>
+  </div>
+
+  <!-- Step 2: Batch review -->
+  <div class="add-step" id="step2">
+    <div class="batch-header">
+      <span class="batch-count" id="batchCount"></span>
+    </div>
+    <table class="batch-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Title</th>
+          <th>Artist Folder</th>
+          <th class="col-new-artist" id="newArtistHeader" style="display:none">New Folder</th>
+          <th>Dur</th>
+          <th>File</th>
+          <th class="center"></th>
+        </tr>
+      </thead>
+      <tbody id="batchBody"></tbody>
+    </table>
+    <div class="batch-actions">
+      <button class="add-all-btn" onclick="addAllToBed()">Submit</button>
+      <button class="cancel-btn" onclick="cancelBatch()">Cancel</button>
+      <button class="add-more-btn" onclick="browseMore()">Add More Songs</button>
+    </div>
+  </div>
+</div>
+
+<table class="track-table">
+  <thead>
+    <tr>
+      <th></th>
+      <th>#</th>
+      <th>Title</th>
+      <th>Source</th>
+      <th>Dur</th>
+      <th>Added</th>
+      <th class="center">Shazam</th>
+      <th class="center">Active</th>
+      <th class="center"><input type="checkbox" class="del-check" onchange="selectAllForDelete(this.checked)" title="Select all"></th>
+    </tr>
+  </thead>
+  <tbody id="trackBody"></tbody>
+</table>
+
+<div class="conflict-overlay" id="conflictOverlay">
+  <div class="conflict-modal">
+    <h3>Import Conflicts</h3>
+    <div class="summary" id="conflictSummary"></div>
+    <div id="conflictList"></div>
+    <div class="conflict-actions">
+      <button onclick="resolveAllConflicts('keep')">Keep All Existing</button>
+      <button onclick="resolveAllConflicts('use')">Use All Imported</button>
+      <button class="apply-btn" onclick="applyImport()">Apply</button>
+      <button onclick="cancelImport()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer" style="margin-top:20px;">
+  <a class="footer-link" href="https://www.youtube.com/channel/UCVP7UpPw6Rr_nJFBlFYDG7w" target="_blank">
+    <img src="/static/whtc_rect.jpeg" alt="WHTC">
+    <span>The Witching Hour Tone Club on YouTube</span>
+  </a>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let tracks = [];
+let currentFilter = 'all';
+let dirty = false;
+let recentlyAdded = new Set(); // src paths of tracks added this session
+let searchQuery = '';
+
+// Batch add state
+let batchItems = [];  // { file, title, artist, artistFolder, dur, objectUrl }
+let previewAudio = new Audio();
+let previewingIndex = -1;
+
+// --- Auth check & initial load ---
+async function init() {
+  try {
+    const authResp = await fetch('/api/auth/check');
+    if (!authResp.ok) {
+      window.location.href = '/breakdown';
+      return;
+    }
+  } catch (e) {
+    window.location.href = '/breakdown';
+    return;
+  }
+  await loadTracks();
+  render();
+}
+
+async function loadTracks() {
+  try {
+    const resp = await fetch('/api/admin/tracks');
+    if (!resp.ok) throw new Error('Failed to load tracks');
+    tracks = await resp.json();
+  } catch (e) {
+    console.error(e);
+    toast('Failed to load tracks: ' + e.message, true);
+  }
+}
+
+async function logout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) {
+    // ignore
+  }
+  window.location.href = '/breakdown';
+}
+
+// Known artist folders
+function getArtistFolders() {
+  const folders = new Set();
+  tracks.forEach(t => {
+    const m = t.src.match(/^music\/([^/]+)\//);
+    if (m) folders.add(m[1]);
+  });
+  // Also include folders from current batch — both existing picks and new artist names
+  batchItems.forEach(b => {
+    if (b.artistFolder && b.artistFolder !== '__new__') folders.add(b.artistFolder);
+    if (b.artistFolder === '__new__' && b.newArtistFolder) folders.add(toFolderName(b.newArtistFolder));
+  });
+  return [...folders].sort();
+}
+
+function toFolderName(str) {
+  return str.toLowerCase()
+    .replace(/['']/g, '')
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+// --- Filename parser ---
+function parseFilename(filename) {
+  let name = filename.replace(/\.(mp3|wav|ogg|m4a|flac)$/i, '');
+
+  // Project78: "Song - Artist - Label - YES/NO" or "Song - Artist - Label - Catalog - YES/NO"
+  const p78 = name.match(/^(.+?)\s*-\s*(.+?)\s*-\s*.+?\s*-\s*(YES|NO)/i);
+  if (p78) {
+    return { title: p78[2].trim() + ' \u2013 ' + p78[1].trim(), artist: p78[2].trim() };
+  }
+
+  const parts = name.split(/\s*-\s*/);
+
+  if (parts.length >= 2) {
+    if (parts.length >= 4 && /^(YES|NO)/i.test(parts[parts.length - 1].trim())) {
+      const song = parts[0].trim();
+      const artist = parts[1].trim();
+      return { title: toTitleCase(artist) + ' \u2013 ' + toTitleCase(song), artist: toTitleCase(artist) };
+    }
+
+    if (parts.length >= 2 && !name.includes(' ')) {
+      const artist = splitCamelCase(parts[0]);
+      const song = splitCamelCase(parts[1]);
+      return { title: artist + ' \u2013 ' + song, artist: artist };
+    }
+
+    if (parts.length === 2) {
+      return { title: parts[1].trim() + ' \u2013 ' + parts[0].trim(), artist: parts[1].trim() };
+    }
+
+    if (parts.length === 3) {
+      return { title: toTitleCase(parts[1].trim()) + ' \u2013 ' + toTitleCase(parts[0].trim()), artist: toTitleCase(parts[1].trim()) };
+    }
+  }
+
+  return { title: name, artist: '' };
+}
+
+function splitCamelCase(str) {
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/^The\s/i, 'The ');
+}
+
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function(txt) {
+    if (txt.length <= 2 && txt.toLowerCase() !== 'i') return txt.toLowerCase();
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+  });
+}
+
+// --- Browse & Batch flow ---
+async function browseFiles() {
+  const files = await pickFiles();
+  if (!files || files.length === 0) return;
+  await addFilesToBatch(files);
+  showBatchStep();
+}
+
+async function browseMore() {
+  const files = await pickFiles();
+  if (!files || files.length === 0) return;
+  await addFilesToBatch(files);
+  renderBatch();
+}
+
+async function pickFiles() {
+  if (window.showOpenFilePicker) {
+    try {
+      const handles = await window.showOpenFilePicker({
+        multiple: true,
+        types: [{
+          description: 'Audio files',
+          accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.m4a', '.flac'] }
+        }]
+      });
+      const files = [];
+      for (const h of handles) {
+        files.push(await h.getFile());
+      }
+      return files;
+    } catch (e) {
+      if (e.name === 'AbortError') return null;
+      toast('Could not open files', true);
+      return null;
+    }
+  } else {
+    return new Promise(resolve => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.mp3,.wav,.ogg,.m4a,.flac';
+      input.onchange = () => resolve([...input.files]);
+      input.click();
+    });
+  }
+}
+
+async function addFilesToBatch(files) {
+  for (const file of files) {
+    const parsed = parseFilename(file.name);
+    const guessFolder = toFolderName(parsed.artist);
+    // Re-check folders each iteration so earlier batch items' new folders are visible
+    const folders = getArtistFolders();
+    const matchedFolder = folders.includes(guessFolder) ? guessFolder : '';
+
+    const item = {
+      file: file,
+      title: parsed.title,
+      artist: parsed.artist,
+      artistFolder: matchedFolder || '__new__',
+      newArtistFolder: matchedFolder ? '' : guessFolder,
+      dur: 0,
+      objectUrl: URL.createObjectURL(file)
+    };
+
+    // Detect duration
+    const dur = await detectDuration(item.objectUrl);
+    item.dur = dur;
+
+    batchItems.push(item);
+  }
+}
+
+function detectDuration(url) {
+  return new Promise(resolve => {
+    const a = new Audio();
+    a.src = url;
+    a.addEventListener('loadedmetadata', () => resolve(Math.round(a.duration)));
+    a.addEventListener('error', () => resolve(0));
+    setTimeout(() => resolve(0), 5000);
+  });
+}
+
+function showBatchStep() {
+  document.getElementById('step1').classList.remove('visible');
+  document.getElementById('step2').classList.add('visible');
+  renderBatch();
+}
+
+function renderBatch() {
+  const body = document.getElementById('batchBody');
+  body.innerHTML = '';
+  const folders = getArtistFolders();
+  let hasNewArtist = false;
+
+  batchItems.forEach((item, i) => {
+    const isNew = item.artistFolder === '__new__';
+    if (isNew) hasNewArtist = true;
+
+    // Build artist select options
+    let selectHtml = '<option value="__new__"' + (isNew ? ' selected' : '') + '>+ New...</option>';
+    folders.forEach(f => {
+      selectHtml += '<option value="' + f + '"' + (item.artistFolder === f ? ' selected' : '') + '>' + f + '</option>';
+    });
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="col-preview">
+        <button class="mini-preview-btn ${previewingIndex === i ? 'playing' : ''}" onclick="toggleBatchPreview(${i})">${previewingIndex === i ? '\u25A0' : '\u25B6'}</button>
+      </td>
+      <td class="col-title">
+        <input type="text" value="${esc(item.title)}" onchange="batchItems[${i}].title=this.value">
+      </td>
+      <td class="col-artist">
+        <select onchange="onBatchArtistChange(${i}, this.value)">${selectHtml}</select>
+      </td>
+      <td class="col-new-artist" ${isNew ? '' : 'style="display:none"'}>
+        <input type="text" value="${esc(item.newArtistFolder)}" placeholder="artist_name" onchange="batchItems[${i}].newArtistFolder=this.value" onblur="onNewArtistBlur(${i})">
+      </td>
+      <td class="col-dur"><span class="dur-val">${fmt(item.dur)}</span></td>
+      <td class="col-file" title="${esc(item.file.name)}">${esc(item.file.name)}</td>
+      <td class="col-remove">
+        <button class="mini-remove-btn" onclick="removeBatchItem(${i})">\u2715</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+
+  // Show/hide new artist column header
+  document.getElementById('newArtistHeader').style.display = hasNewArtist ? '' : 'none';
+  // Also update all new-artist cells visibility
+  body.querySelectorAll('.col-new-artist').forEach((td, i) => {
+    td.style.display = batchItems[i].artistFolder === '__new__' ? '' : 'none';
+  });
+
+  document.getElementById('batchCount').textContent = batchItems.length + ' file' + (batchItems.length !== 1 ? 's' : '') + ' selected';
+}
+
+function onBatchArtistChange(index, value) {
+  batchItems[index].artistFolder = value;
+  if (value !== '__new__') batchItems[index].newArtistFolder = '';
+  renderBatch();
+}
+
+function onNewArtistBlur(index) {
+  // When a new artist name is finalized, re-check other batch items
+  // that had the same guess — auto-assign them to the new folder
+  const newFolder = toFolderName(batchItems[index].newArtistFolder);
+  if (!newFolder) return;
+
+  batchItems.forEach((item, i) => {
+    if (i === index) return;
+    // If this item is also "__new__" with the same guessed folder, switch it to use the now-known folder
+    if (item.artistFolder === '__new__' && toFolderName(item.newArtistFolder) === newFolder) {
+      item.artistFolder = newFolder;
+      item.newArtistFolder = '';
+    }
+  });
+  renderBatch();
+}
+
+function removeBatchItem(index) {
+  if (previewingIndex === index) { previewAudio.pause(); previewingIndex = -1; }
+  URL.revokeObjectURL(batchItems[index].objectUrl);
+  batchItems.splice(index, 1);
+  if (batchItems.length === 0) { cancelBatch(); return; }
+  renderBatch();
+}
+
+function toggleBatchPreview(index) {
+  if (previewingIndex === index) {
+    previewAudio.pause();
+    previewingIndex = -1;
+  } else {
+    previewAudio.src = batchItems[index].objectUrl;
+    previewAudio.play();
+    previewingIndex = index;
+  }
+  renderBatch();
+}
+
+function cancelBatch() {
+  previewAudio.pause();
+  previewingIndex = -1;
+  batchItems.forEach(b => URL.revokeObjectURL(b.objectUrl));
+  batchItems = [];
+  document.getElementById('step2').classList.remove('visible');
+  document.getElementById('step1').classList.add('visible');
+}
+
+async function addAllToBed() {
+  if (batchItems.length === 0) return;
+
+  // Validate
+  for (let i = 0; i < batchItems.length; i++) {
+    const item = batchItems[i];
+    if (!item.title.trim()) { toast('Track ' + (i + 1) + ' needs a title', true); return; }
+    if (item.artistFolder === '__new__' && !item.newArtistFolder.trim()) {
+      toast('Track ' + (i + 1) + ' needs an artist folder name', true); return;
+    }
+  }
+
+  // Check for duplicates
+  const dupes = [];
+  for (const item of batchItems) {
+    let folder = item.artistFolder;
+    if (folder === '__new__') folder = toFolderName(item.newArtistFolder.trim());
+    const destPath = 'music/' + folder + '/' + item.file.name;
+    const existing = tracks.find(t => t.src === destPath);
+    if (existing) dupes.push(item.title);
+  }
+  if (dupes.length > 0) {
+    if (!confirm('These tracks already exist:\n\n' + dupes.join('\n') + '\n\nAdd duplicates anyway?')) return;
+  }
+
+  let added = 0;
+  let copyFails = 0;
+  const newTracks = [];
+
+  for (const item of batchItems) {
+    let folder = item.artistFolder;
+    if (folder === '__new__') {
+      folder = toFolderName(item.newArtistFolder.trim());
+    }
+
+    const filename = item.file.name;
+
+    // Upload file via server
+    let destPath = 'music/' + folder + '/' + filename;
+    try {
+      const formData = new FormData();
+      formData.append('artist_folder', folder);
+      formData.append('file', item.file);
+      const resp = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+      if (!resp.ok) throw new Error('Server error');
+      const result = await resp.json();
+      if (result.path) destPath = result.path;
+    } catch (e) {
+      console.error('Upload failed:', filename, e);
+      copyFails++;
+    }
+
+    newTracks.push({
+      title: item.title.trim(),
+      src: destPath,
+      dur: item.dur,
+      active: 1,
+      shazam: 0,
+      added: new Date().toISOString().slice(0, 10)
+    });
+    recentlyAdded.add(destPath);
+    added++;
+  }
+
+  // Save new tracks to server
+  try {
+    const resp = await fetch('/api/admin/tracks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTracks)
+    });
+    if (!resp.ok) throw new Error('Server error');
+  } catch (e) {
+    console.error('Save failed:', e);
+    toast('Save failed: ' + e.message, true);
+    return;
+  }
+
+  // Reload tracks from server
+  await loadTracks();
+  render();
+  cancelBatch();
+  markClean();
+
+  let msg = 'Added ' + added + ' track' + (added !== 1 ? 's' : '') + ' — saved';
+  if (copyFails > 0) msg += ' (' + copyFails + ' upload failed — move manually)';
+  toast(msg, copyFails > 0);
+}
+
+// --- Track list preview ---
+let trackPreviewIndex = -1;
+const trackPreviewAudio = new Audio();
+trackPreviewAudio.addEventListener('ended', () => {
+  trackPreviewIndex = -1;
+  render();
+});
+
+function toggleTrackPreview(index) {
+  if (trackPreviewIndex === index) {
+    trackPreviewAudio.pause();
+    trackPreviewIndex = -1;
+  } else {
+    trackPreviewAudio.src = '/' + tracks[index].src;
+    trackPreviewAudio.play();
+    trackPreviewIndex = index;
+  }
+  render();
+}
+
+// --- Core functions ---
+function markDirty() {
+  dirty = true;
+  document.getElementById('dirtyDot').classList.add('show');
+}
+
+function markClean() {
+  dirty = false;
+  document.getElementById('dirtyDot').classList.remove('show');
+}
+
+function fmt(s) {
+  if (!s && s !== 0) return '\u2014';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function updateStats() {
+  const active = tracks.filter(t => t.active).length;
+  const total = tracks.length;
+  const totalDur = tracks.filter(t => t.active).reduce((sum, t) => sum + (t.dur || 0), 0);
+  document.getElementById('stats').textContent =
+    active + '/' + total + ' active \u00b7 ' + Math.floor(totalDur / 60) + ' min';
+}
+
+function render() {
+  const body = document.getElementById('trackBody');
+  body.innerHTML = '';
+
+  // Build display order: recent first, then the rest
+  const indices = tracks.map((_, i) => i);
+  if (recentlyAdded.size > 0 && currentFilter !== 'inactive') {
+    indices.sort((a, b) => {
+      const aRecent = recentlyAdded.has(tracks[a].src) ? 0 : 1;
+      const bRecent = recentlyAdded.has(tracks[b].src) ? 0 : 1;
+      if (aRecent !== bRecent) return aRecent - bRecent;
+      return a - b;
+    });
+  }
+
+  let shownRecent = false;
+  indices.forEach(i => {
+    const t = tracks[i];
+    if (currentFilter === 'active' && !t.active) return;
+    if (currentFilter === 'inactive' && t.active) return;
+    if (searchQuery && !fuzzyMatch(searchQuery, t.title + ' ' + t.src)) return;
+    const isRecent = recentlyAdded.has(t.src);
+
+    // Add separator after recent tracks
+    if (shownRecent && !isRecent) {
+      const sep = document.createElement('tr');
+      sep.innerHTML = '<td colspan="10" style="padding:2px 24px;border-bottom:1px solid #2a2520;"><span style="font-size:9px;color:#333;letter-spacing:2px;">LIBRARY</span></td>';
+      body.appendChild(sep);
+      shownRecent = false;
+    }
+    if (isRecent) shownRecent = true;
+
+    const tr = document.createElement('tr');
+    tr.className = (t.active ? '' : 'inactive') + (isRecent ? ' recent' : '');
+    tr.innerHTML = `
+      <td class="actions-cell">
+        <button class="mini-preview-btn ${trackPreviewIndex === i ? 'playing' : ''}" onclick="toggleTrackPreview(${i})">${trackPreviewIndex === i ? '\u25A0' : '\u25B6'}</button>
+      </td>
+      <td class="num">${i + 1}</td>
+      <td class="title-cell">${isRecent ? '<span style="color:#8ab87a;font-size:9px;margin-right:6px;">NEW</span>' : ''}${esc(t.title)}</td>
+      <td class="src-cell" title="${esc(t.src)}">${esc(t.src)}</td>
+      <td class="dur-cell">${fmt(t.dur)}</td>
+      <td class="date-cell">${t.added || ''}</td>
+      <td class="status-cell">
+        <label class="toggle shazam">
+          <input type="checkbox" ${t.shazam ? 'checked' : ''} onchange="toggleShazam(${i}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td class="status-cell">
+        <label class="toggle">
+          <input type="checkbox" ${t.active ? 'checked' : ''} onchange="toggleTrack(${i}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td class="actions-cell">
+        <input type="checkbox" class="del-check" data-index="${i}" onchange="updateDeleteSelection()" ${deleteSet.has(i) ? 'checked' : ''}>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+  updateStats();
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+let _saveTimer = null;
+function debouncedSave() {
+  markDirty();
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => saveTracks(), 800);
+}
+
+async function toggleShazam(index, passed) {
+  tracks[index].shazam = passed ? 1 : 0;
+  render();
+  debouncedSave();
+}
+
+async function toggleTrack(index, active) {
+  tracks[index].active = active ? 1 : 0;
+  render();
+  debouncedSave();
+}
+
+async function saveTracks() {
+  try {
+    const resp = await fetch('/api/admin/tracks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tracks)
+    });
+    if (!resp.ok) throw new Error('Server error');
+    // Reload from server to get fresh data
+    await loadTracks();
+    markClean();
+    render();
+    toast('Saved');
+  } catch (e) {
+    console.error(e);
+    toast('Save failed: ' + e.message, true);
+  }
+}
+
+const deleteSet = new Set();
+
+function updateDeleteSelection() {
+  deleteSet.clear();
+  document.querySelectorAll('.del-check[data-index]').forEach(cb => {
+    if (cb.checked) deleteSet.add(parseInt(cb.dataset.index));
+  });
+  const btn = document.getElementById('deleteSelBtn');
+  btn.style.display = deleteSet.size > 0 ? 'inline-block' : 'none';
+  btn.textContent = 'Delete Selected (' + deleteSet.size + ')';
+}
+
+function selectAllForDelete(checked) {
+  document.querySelectorAll('.del-check[data-index]').forEach(cb => {
+    cb.checked = checked;
+  });
+  updateDeleteSelection();
+}
+
+async function deleteSelected() {
+  if (deleteSet.size === 0) return;
+  if (!confirm('Delete ' + deleteSet.size + ' track' + (deleteSet.size !== 1 ? 's' : '') + '?')) return;
+
+  // Collect track IDs for deletion
+  const ids = [...deleteSet].map(i => tracks[i].id);
+
+  try {
+    const resp = await fetch('/api/admin/delete-tracks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids })
+    });
+    if (!resp.ok) throw new Error('Server error');
+  } catch (e) {
+    console.error(e);
+    toast('Delete failed: ' + e.message, true);
+    return;
+  }
+
+  deleteSet.clear();
+  document.getElementById('deleteSelBtn').style.display = 'none';
+
+  // Reload tracks from server
+  await loadTracks();
+  render();
+  toast('Deleted');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function onSearch() {
+  searchQuery = document.getElementById('searchBox').value.trim().toLowerCase();
+  render();
+}
+
+function fuzzyMatch(query, text) {
+  const words = query.split(/\s+/);
+  const lower = text.toLowerCase();
+  return words.every(w => lower.includes(w));
+}
+
+function exportCSV() {
+  let csv = 'title,src,dur,active,added,shazam\n';
+  tracks.forEach(t => {
+    const title = '"' + t.title.replace(/"/g, '""') + '"';
+    const src = '"' + t.src.replace(/"/g, '""') + '"';
+    csv += title + ',' + src + ',' + (t.dur || 0) + ',' + (t.active ? 'true' : 'false') + ',' + (t.added || '') + ',' + (t.shazam ? 'true' : 'false') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tracks.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported CSV');
+}
+
+let _importNew = [];
+let _importConflicts = [];
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    if (lines.length < 2) { toast('Empty CSV', true); return; }
+
+    const parsed = [];
+    for (let i = 1; i < lines.length; i++) {
+      const parts = parseCSVLine(lines[i]);
+      if (parts.length < 3) continue;
+      parsed.push({
+        title: parts[0] || '',
+        src: parts[1] || '',
+        dur: parseInt(parts[2]) || 0,
+        active: parts[3] ? parts[3].trim().toLowerCase() !== 'false' ? 1 : 0 : 1,
+        added: parts[4] ? parts[4].trim() : '',
+        shazam: parts[5] ? parts[5].trim().toLowerCase() === 'true' ? 1 : 0 : 0
+      });
+    }
+
+    if (parsed.length === 0) { toast('No tracks found in CSV', true); return; }
+
+    const existingSrcs = new Map(tracks.map((t, i) => [t.src, i]));
+    _importNew = [];
+    _importConflicts = [];
+
+    parsed.forEach(t => {
+      if (existingSrcs.has(t.src)) {
+        _importConflicts.push({ imported: t, existingIndex: existingSrcs.get(t.src), choice: 'keep' });
+      } else {
+        _importNew.push(t);
+      }
+    });
+
+    if (_importConflicts.length === 0) {
+      // Save new tracks to server
+      try {
+        const resp = await fetch('/api/admin/tracks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(_importNew)
+        });
+        if (!resp.ok) throw new Error('Server error');
+        await loadTracks();
+        render();
+        toast('Added ' + _importNew.length + ' new tracks');
+      } catch (e) {
+        toast('Save failed: ' + e.message, true);
+      }
+    } else {
+      showConflicts();
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function showConflicts() {
+  const summary = _importNew.length + ' new track' + (_importNew.length !== 1 ? 's' : '') +
+    ' will be added. ' + _importConflicts.length + ' conflict' + (_importConflicts.length !== 1 ? 's' : '') + ' to resolve:';
+  document.getElementById('conflictSummary').textContent = summary;
+
+  const list = document.getElementById('conflictList');
+  list.innerHTML = '';
+  _importConflicts.forEach((c, ci) => {
+    const ex = tracks[c.existingIndex];
+    const im = c.imported;
+    const div = document.createElement('div');
+    div.className = 'conflict-row';
+    div.id = 'conflict-' + ci;
+
+    let diffs = '';
+    if (ex.title !== im.title) diffs += '<div class="conflict-detail">Title: <span>' + esc(ex.title) + '</span> → <span>' + esc(im.title) + '</span></div>';
+    if (ex.active !== im.active) diffs += '<div class="conflict-detail">Active: <span>' + ex.active + '</span> → <span>' + im.active + '</span></div>';
+    if (ex.shazam !== im.shazam) diffs += '<div class="conflict-detail">Shazam: <span>' + (ex.shazam || 0) + '</span> → <span>' + im.shazam + '</span></div>';
+    if ((ex.added || '') !== (im.added || '')) diffs += '<div class="conflict-detail">Added: <span>' + (ex.added || '(none)') + '</span> → <span>' + (im.added || '(none)') + '</span></div>';
+    if (ex.dur !== im.dur) diffs += '<div class="conflict-detail">Dur: <span>' + fmt(ex.dur) + '</span> → <span>' + fmt(im.dur) + '</span></div>';
+    if (!diffs) diffs = '<div class="conflict-detail" style="color:#6b8a5e">Identical — no differences</div>';
+
+    div.innerHTML = '<div class="conflict-title">' + esc(ex.title) + '</div>' +
+      diffs +
+      '<div class="conflict-choices">' +
+        '<button class="' + (c.choice === 'keep' ? 'chosen' : '') + '" onclick="setConflictChoice(' + ci + ',\'keep\')">Keep Existing</button>' +
+        '<button class="' + (c.choice === 'use' ? 'chosen' : '') + '" onclick="setConflictChoice(' + ci + ',\'use\')">Use Imported</button>' +
+      '</div>';
+    list.appendChild(div);
+  });
+
+  document.getElementById('conflictOverlay').classList.add('show');
+}
+
+function setConflictChoice(ci, choice) {
+  _importConflicts[ci].choice = choice;
+  const btns = document.getElementById('conflict-' + ci).querySelectorAll('.conflict-choices button');
+  btns.forEach(b => b.classList.remove('chosen'));
+  btns[choice === 'keep' ? 0 : 1].classList.add('chosen');
+}
+
+function resolveAllConflicts(choice) {
+  _importConflicts.forEach((c, ci) => setConflictChoice(ci, choice));
+}
+
+async function applyImport() {
+  // Build the array of tracks to save: updated conflicts + new tracks
+  const toSave = [];
+
+  _importConflicts.forEach(c => {
+    if (c.choice === 'use') {
+      const updated = Object.assign({}, c.imported);
+      // Preserve the existing track's id for update
+      updated.id = tracks[c.existingIndex].id;
+      toSave.push(updated);
+    }
+  });
+
+  // Add new tracks (no id, server will insert)
+  toSave.push(..._importNew);
+
+  try {
+    const resp = await fetch('/api/admin/tracks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(toSave)
+    });
+    if (!resp.ok) throw new Error('Server error');
+    await loadTracks();
+  } catch (e) {
+    toast('Save failed: ' + e.message, true);
+    return;
+  }
+
+  document.getElementById('conflictOverlay').classList.remove('show');
+  render();
+  const updated = _importConflicts.filter(c => c.choice === 'use').length;
+  toast('Added ' + _importNew.length + ' new, updated ' + updated + ' existing');
+}
+
+function cancelImport() {
+  _importConflicts = [];
+  _importNew = [];
+  document.getElementById('conflictOverlay').classList.remove('show');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { current += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { result.push(current); current = ''; }
+      else { current += c; }
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>

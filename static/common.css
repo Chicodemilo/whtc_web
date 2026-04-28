@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+/* --- Reset --- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* --- Base --- */
+body {
+  background: #0a0a0a;
+  color: #c8b89a;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: #c8b89a; }
+a:hover { color: #e8d5b5; }
+
+/* --- Header --- */
+.header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  background: #0a0a0a;
+  z-index: 50;
+}
+
+.header h1 {
+  font-family: 'Special Elite', cursive;
+  font-size: 22px;
+  color: #e8d5b5;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.header h1 a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.header .sub {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 2px;
+}
+
+.header .page-title {
+  font-family: 'Special Elite', cursive;
+  font-size: 13px;
+  color: #555;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.header .spacer { flex: 1; }
+
+/* --- Nav --- */
+.nav {
+  padding: 10px 24px;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  gap: 20px;
+}
+
+.nav a {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.nav a:hover { color: #c8b89a; }
+.nav a.active { color: #c8b89a; }
+
+/* --- Footer --- */
+.footer {
+  padding: 6px 24px;
+  border-top: 1px solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  background: rgba(10, 8, 6, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 50;
+}
+
+.footer a.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+}
+
+.footer a.footer-link img {
+  height: 55px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.footer a.footer-link span {
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.footer a.footer-link:hover img { opacity: 0.8; }
+.footer a.footer-link:hover span { color: #c8b89a; }
+
+.footer .footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer .footer-links a {
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer .footer-links a:hover { color: #c8b89a; }
+
+.footer .footer-copy {
+  font-size: 9px;
+  color: #333;
+  letter-spacing: 1px;
+  margin-left: auto;
+}

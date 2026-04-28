@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHTC</title>
+<link rel="icon" href="/static/favicon.ico">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    color: #c8b89a;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    width: 320px;
+    border: 1px solid #1a1a1a;
+    padding: 32px 28px;
+  }
+
+  .login-box h1 {
+    font-family: 'Special Elite', cursive;
+    font-size: 20px;
+    color: #e8d5b5;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  label {
+    display: block;
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #2a2520;
+    color: #e8d5b5;
+    padding: 10px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    margin-bottom: 16px;
+    transition: border-color 0.15s;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #c8b89a;
+  }
+
+  /* Honeypot — hidden from humans, bots fill it */
+  .hp-field {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+    tabindex: -1;
+  }
+
+  button {
+    width: 100%;
+    background: #141210;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+
+  button:hover {
+    border-color: #c8b89a;
+    background: #1a1714;
+  }
+
+  .error {
+    color: #b87a7a;
+    font-size: 11px;
+    text-align: center;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <h1>WHTC</h1>
+  <div class="error" id="error"></div>
+
+  <!-- Honeypot: bots see "name" and fill it. Hidden from humans. -->
+  <div class="hp-field" aria-hidden="true">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" tabindex="-1" autocomplete="off">
+  </div>
+
+  <label for="username">Username</label>
+  <input type="text" id="username" autofocus>
+
+  <label for="password">Password</label>
+  <input type="password" id="password">
+
+  <button onclick="doLogin()">Enter</button>
+</div>
+
+<script>
+document.getElementById('password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const name = document.getElementById('name').value;
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('error');
+
+  errEl.classList.remove('show');
+
+  try {
+    const resp = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, username, password })
+    });
+    const data = await resp.json();
+
+    if (resp.ok && data.ok) {
+      window.location.reload();
+    } else {
+      errEl.textContent = data.error || 'Invalid credentials';
+      errEl.classList.add('show');
+    }
+  } catch (e) {
+    errEl.textContent = 'Connection error';
+    errEl.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

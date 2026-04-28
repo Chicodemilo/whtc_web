@@ -1,0 +1,40 @@
+# WHTC Web — production docker-compose
+# Deploy alongside Clubbie on the same droplet
+# Uses the shared nginx proxy on the host (Clubbie's nginx container)
+
+services:
+  whtc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - WHTC_PORT=8090
+      - WHTC_ADMIN_USER=${WHTC_ADMIN_USER}
+      - WHTC_ADMIN_PASS_HASH=${WHTC_ADMIN_PASS_HASH}
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - whtc_data:/app/data
+      - whtc_music:/app/music
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/api/tracks')"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+    networks:
+      - default
+      - clubbie_network
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  clubbie_network:
+    external: true
+    name: clubbie_2026_app-network
+
+volumes:
+  whtc_data:
+    driver: local
+  whtc_music:
+    driver: local
