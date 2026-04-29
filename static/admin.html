@@ -932,6 +932,7 @@
       <th>Title</th>
       <th>Source</th>
       <th>Dur</th>
+      <th>Plays</th>
       <th>Added</th>
       <th class="center">Shazam</th>
       <th class="center">Active</th>
@@ -1474,6 +1475,7 @@ function render() {
       <td class="title-cell">${isRecent ? '<span style="color:#8ab87a;font-size:9px;margin-right:6px;">NEW</span>' : ''}${esc(t.title)}</td>
       <td class="src-cell" title="${esc(t.src)}">${esc(t.src)}</td>
       <td class="dur-cell">${fmt(t.dur)}</td>
+      <td class="dur-cell" style="color:#8ab87a">${t.play_count || 0}</td>
       <td class="date-cell">${t.added || ''}</td>
       <td class="status-cell">
         <label class="toggle shazam">

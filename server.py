@@ -53,6 +53,7 @@ def init_db():
         dur INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1,
         shazam INTEGER DEFAULT 0,
+        play_count INTEGER DEFAULT 0,
         added TEXT DEFAULT '',
         created_at TEXT DEFAULT (datetime('now'))
     )''')
@@ -76,6 +77,11 @@ def init_db():
     # Migrate: add blocked column if missing
     try:
         conn.execute('ALTER TABLE page_hits ADD COLUMN blocked INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass  # already exists
+    # Migrate: add play_count column if missing
+    try:
+        conn.execute('ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0')
     except sqlite3.OperationalError:
         pass  # already exists
     conn.commit()
@@ -215,7 +221,7 @@ class WHTCHandler(BaseHTTPRequestHandler):
         if path == '/api/tracks':
             conn = get_db()
             rows = conn.execute(
-                'SELECT id, title, src, dur FROM tracks WHERE active = 1 ORDER BY title'
+                'SELECT id, title, src, dur, play_count FROM tracks WHERE active = 1 ORDER BY title'
             ).fetchall()
             conn.close()
             self.ok_json([dict(r) for r in rows])
@@ -228,7 +234,7 @@ class WHTCHandler(BaseHTTPRequestHandler):
                 return
             conn = get_db()
             rows = conn.execute(
-                'SELECT id, title, src, dur, active, shazam, added FROM tracks ORDER BY id'
+                'SELECT id, title, src, dur, active, shazam, play_count, added FROM tracks ORDER BY id'
             ).fetchall()
             conn.close()
             self.ok_json([dict(r) for r in rows])
@@ -294,6 +300,11 @@ class WHTCHandler(BaseHTTPRequestHandler):
         # Record page hit (public, no auth)
         if path == '/api/hit':
             self.record_hit()
+            return
+
+        # Record track play (public, no auth)
+        if path == '/api/track-played':
+            self.record_track_played()
             return
 
         # Login
@@ -532,6 +543,24 @@ class WHTCHandler(BaseHTTPRequestHandler):
         except Exception:
             pass
         # Always 204 — analytics should never break UX
+        self.send_response(204)
+        self.end_headers()
+
+    def record_track_played(self):
+        try:
+            body = self.read_body()
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        track_id = data.get('id')
+        if track_id:
+            try:
+                conn = get_db()
+                conn.execute('UPDATE tracks SET play_count = play_count + 1 WHERE id = ?', (track_id,))
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
         self.send_response(204)
         self.end_headers()
 
