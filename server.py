@@ -70,8 +70,14 @@ def init_db():
         ip TEXT,
         referrer TEXT,
         user_agent TEXT,
+        blocked INTEGER DEFAULT 0,
         created_at TEXT DEFAULT (datetime('now'))
     )''')
+    # Migrate: add blocked column if missing
+    try:
+        conn.execute('ALTER TABLE page_hits ADD COLUMN blocked INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass  # already exists
     conn.commit()
     conn.close()
 
@@ -241,6 +247,19 @@ class WHTCHandler(BaseHTTPRequestHandler):
             self.get_analytics()
             return
 
+        # API: admin blocked IPs list
+        if path == '/api/admin/analytics/blocked-ips':
+            if not self.is_authed():
+                self.error_json(401, 'Not authenticated')
+                return
+            conn = get_db()
+            rows = conn.execute(
+                'SELECT DISTINCT ip FROM page_hits WHERE blocked = 1'
+            ).fetchall()
+            conn.close()
+            self.ok_json({'ips': [r['ip'] for r in rows]})
+            return
+
         # Music files (served from music dir, not static)
         if path.startswith('/music/'):
             self.serve_music(urllib.parse.unquote(path[7:]))
@@ -301,6 +320,29 @@ class WHTCHandler(BaseHTTPRequestHandler):
                 self.error_json(401, 'Not authenticated')
                 return
             self.upload_file()
+            return
+
+        # Admin: block/unblock IP
+        if path == '/api/admin/analytics/block-ip':
+            if not self.is_authed():
+                self.error_json(401, 'Not authenticated')
+                return
+            body = self.read_body()
+            try:
+                data = json.loads(body)
+            except Exception:
+                self.send_error(400)
+                return
+            ip = data.get('ip', '')
+            blocked = 1 if data.get('blocked', True) else 0
+            if not ip:
+                self.error_json(400, 'Need ip')
+                return
+            conn = get_db()
+            conn.execute('UPDATE page_hits SET blocked = ? WHERE ip = ?', (blocked, ip))
+            conn.commit()
+            conn.close()
+            self.ok_json({'ok': True, 'ip': ip, 'blocked': bool(blocked)})
             return
 
         # Admin: delete tracks
@@ -497,32 +539,34 @@ class WHTCHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         qs = urllib.parse.parse_qs(parsed.query)
         days = int(qs.get('days', ['30'])[0])
+        hide_blocked = qs.get('hide_blocked', ['true'])[0].lower() != 'false'
 
         conn = get_db()
         cutoff = f"-{days} days"
+        blocked_filter = " AND blocked = 0" if hide_blocked else ""
 
         total = conn.execute(
-            "SELECT COUNT(*) FROM page_hits WHERE created_at >= datetime('now', ?)", (cutoff,)
+            f"SELECT COUNT(*) FROM page_hits WHERE created_at >= datetime('now', ?){blocked_filter}", (cutoff,)
         ).fetchone()[0]
 
         unique = conn.execute(
-            "SELECT COUNT(DISTINCT ip) FROM page_hits WHERE created_at >= datetime('now', ?)", (cutoff,)
+            f"SELECT COUNT(DISTINCT ip) FROM page_hits WHERE created_at >= datetime('now', ?){blocked_filter}", (cutoff,)
         ).fetchone()[0]
 
         path_rows = conn.execute(
-            "SELECT path, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?) GROUP BY path ORDER BY cnt DESC LIMIT 20",
+            f"SELECT path, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?){blocked_filter} GROUP BY path ORDER BY cnt DESC LIMIT 20",
             (cutoff,)
         ).fetchall()
         hits_by_path = {r['path']: r['cnt'] for r in path_rows}
 
         ref_rows = conn.execute(
-            "SELECT referrer, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?) AND referrer != '' GROUP BY referrer ORDER BY cnt DESC LIMIT 10",
+            f"SELECT referrer, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?){blocked_filter} AND referrer != '' GROUP BY referrer ORDER BY cnt DESC LIMIT 10",
             (cutoff,)
         ).fetchall()
         top_referrers = [{'referrer': r['referrer'], 'count': r['cnt']} for r in ref_rows]
 
         recent = conn.execute(
-            "SELECT path, ip, referrer, created_at FROM page_hits ORDER BY created_at DESC LIMIT 50"
+            f"SELECT path, ip, referrer, created_at FROM page_hits WHERE 1=1{blocked_filter} ORDER BY created_at DESC LIMIT 50"
         ).fetchall()
         recent_hits = [{'path': r['path'], 'ip': r['ip'], 'referrer': r['referrer'], 'timestamp': r['created_at']} for r in recent]
 

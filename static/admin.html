@@ -771,6 +771,46 @@
     letter-spacing: 1px;
   }
 
+  .block-btn {
+    background: none;
+    border: 1px solid #2a1a1a;
+    color: #8a4a4a;
+    padding: 2px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .block-btn:hover { border-color: #b85a5a; color: #b85a5a; }
+
+  .unblock-btn {
+    background: none;
+    border: 1px solid #1a2a1a;
+    color: #5a8a5a;
+    padding: 2px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .unblock-btn:hover { border-color: #8ab87a; color: #8ab87a; }
+
+  .blocked-ip-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #111;
+    border: 1px solid #1a1a1a;
+    padding: 4px 10px;
+    margin: 4px;
+    font-size: 11px;
+    color: #888;
+  }
+
   /* Footer */
   .footer {
     padding: 6px 24px;
@@ -916,6 +956,8 @@
   <div class="analytics-grid" id="analyticsGrid"></div>
   <div class="analytics-section-title">Top Referrers</div>
   <div id="analyticsReferrers"><span class="analytics-muted">loading...</span></div>
+  <div class="analytics-section-title">Blocked IPs</div>
+  <div id="analyticsBlocked"><span class="analytics-muted">loading...</span></div>
   <div class="analytics-section-title">Recent Hits</div>
   <div id="analyticsRecent"><span class="analytics-muted">loading...</span></div>
 </div>
@@ -1782,16 +1824,39 @@ function switchView(view, btn) {
 
 // --- Analytics ---
 let analyticsData = null;
+let blockedIps = [];
 
 async function loadAnalytics() {
   const days = document.getElementById('analyticsDays').value;
   try {
-    const resp = await fetch('/api/admin/analytics?days=' + days);
-    if (!resp.ok) throw new Error('Failed');
-    analyticsData = await resp.json();
+    const [analyticsResp, blockedResp] = await Promise.all([
+      fetch('/api/admin/analytics?days=' + days),
+      fetch('/api/admin/analytics/blocked-ips')
+    ]);
+    if (!analyticsResp.ok) throw new Error('Failed');
+    analyticsData = await analyticsResp.json();
+    if (blockedResp.ok) {
+      const bd = await blockedResp.json();
+      blockedIps = bd.ips || [];
+    }
     renderAnalytics();
   } catch (e) {
     document.getElementById('analyticsGrid').innerHTML = '<span class="analytics-muted">Failed to load analytics</span>';
+  }
+}
+
+async function blockIp(ip, block) {
+  try {
+    const resp = await fetch('/api/admin/analytics/block-ip', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ip: ip, blocked: block})
+    });
+    if (!resp.ok) throw new Error('Failed');
+    toast(block ? 'Blocked ' + ip : 'Unblocked ' + ip);
+    loadAnalytics();
+  } catch (e) {
+    toast('Failed to update IP block', true);
   }
 }
 
@@ -1820,12 +1885,26 @@ function renderAnalytics() {
     refEl.innerHTML = '<span class="analytics-muted">no referrer data</span>';
   }
 
+  // Blocked IPs
+  const blkEl = document.getElementById('analyticsBlocked');
+  if (blockedIps.length > 0) {
+    let html = '';
+    blockedIps.forEach(ip => {
+      html += '<span class="blocked-ip-tag">' + esc(ip) + ' <button class="unblock-btn" onclick="blockIp(\'' + esc(ip) + '\', false)">unblock</button></span>';
+    });
+    blkEl.innerHTML = html;
+  } else {
+    blkEl.innerHTML = '<span class="analytics-muted">none</span>';
+  }
+
   // Recent hits
   const recEl = document.getElementById('analyticsRecent');
   if (d.recent_hits && d.recent_hits.length > 0) {
-    let html = '<div style="overflow-x:auto"><table class="analytics-table"><thead><tr><th>Timestamp</th><th>Path</th><th>IP</th><th>Referrer</th></tr></thead><tbody>';
+    let html = '<div style="overflow-x:auto"><table class="analytics-table"><thead><tr><th>Timestamp</th><th>Path</th><th>IP</th><th>Referrer</th><th></th></tr></thead><tbody>';
     d.recent_hits.forEach(h => {
-      html += '<tr><td>' + esc(h.timestamp || '') + '</td><td>' + esc(h.path) + '</td><td>' + esc(h.ip || '') + '</td><td class="ref-cell">' + esc(h.referrer || '(direct)') + '</td></tr>';
+      const isBlocked = blockedIps.includes(h.ip);
+      html += '<tr><td>' + esc(h.timestamp || '') + '</td><td>' + esc(h.path) + '</td><td>' + esc(h.ip || '') + '</td><td class="ref-cell">' + esc(h.referrer || '(direct)') + '</td>';
+      html += '<td>' + (h.ip && !isBlocked ? '<button class="block-btn" onclick="blockIp(\'' + esc(h.ip) + '\', true)">block</button>' : '') + '</td></tr>';
     });
     html += '</tbody></table></div>';
     recEl.innerHTML = html;

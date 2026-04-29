@@ -387,6 +387,13 @@ loadTracks();
 
 // Record page hit
 fetch('/api/hit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({path: '/'}) }).catch(() => {});
+
+// Track YouTube clicks
+document.querySelectorAll('a[href*="youtube.com"]').forEach(a => {
+  a.addEventListener('click', () => {
+    fetch('/api/hit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({path: '/youtube'}) }).catch(() => {});
+  });
+});
 </script>
 </body>
 </html>
