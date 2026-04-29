@@ -64,6 +64,14 @@ def init_db():
         user_agent TEXT,
         timestamp TEXT DEFAULT (datetime('now'))
     )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS page_hits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        path TEXT NOT NULL,
+        ip TEXT,
+        referrer TEXT,
+        user_agent TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    )''')
     conn.commit()
     conn.close()
 
@@ -173,6 +181,30 @@ class WHTCHandler(BaseHTTPRequestHandler):
                 self.serve_file('login.html', 'text/html')
             return
 
+        # Public CSV download (all tracks, all data)
+        if path == '/api/tracks.csv':
+            conn = get_db()
+            rows = conn.execute(
+                'SELECT title, src, dur, active, shazam, added FROM tracks ORDER BY title'
+            ).fetchall()
+            conn.close()
+            csv = 'title,src,dur,active,shazam,added\n'
+            for r in rows:
+                title = '"' + r['title'].replace('"', '""') + '"'
+                src = '"' + r['src'].replace('"', '""') + '"'
+                active = 'true' if r['active'] else 'false'
+                shazam = 'true' if r['shazam'] else 'false'
+                added = r['added'] or ''
+                csv += f'{title},{src},{r["dur"]},{active},{shazam},{added}\n'
+            body = csv.encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/csv')
+            self.send_header('Content-Disposition', 'attachment; filename="whtc_tracks.csv"')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         # API: public tracks (active only, no shazam/admin fields)
         if path == '/api/tracks':
             conn = get_db()
@@ -199,6 +231,14 @@ class WHTCHandler(BaseHTTPRequestHandler):
         # API: check auth
         if path == '/api/auth/check':
             self.ok_json({'authed': self.is_authed()})
+            return
+
+        # API: admin analytics
+        if path == '/api/admin/analytics':
+            if not self.is_authed():
+                self.error_json(401, 'Not authenticated')
+                return
+            self.get_analytics()
             return
 
         # Music files (served from music dir, not static)
@@ -230,6 +270,11 @@ class WHTCHandler(BaseHTTPRequestHandler):
         # Honeypot POST
         if path in HONEYPOT_PATHS or path + '/' in HONEYPOT_PATHS:
             self.handle_honeypot_post(path)
+            return
+
+        # Record page hit (public, no auth)
+        if path == '/api/hit':
+            self.record_hit()
             return
 
         # Login
@@ -422,6 +467,73 @@ class WHTCHandler(BaseHTTPRequestHandler):
 
         src_path = f'music/{safe_folder}/{filename}'
         self.ok_json({'ok': True, 'path': src_path})
+
+    # --- Analytics ---
+    def record_hit(self):
+        try:
+            body = self.read_body()
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        hit_path = data.get('path', '/')[:255]
+        ip = self.client_address[0]
+        referrer = (self.headers.get('Referer') or data.get('referrer', ''))[:500]
+        ua = (self.headers.get('User-Agent') or '')[:500]
+        try:
+            conn = get_db()
+            conn.execute(
+                'INSERT INTO page_hits (path, ip, referrer, user_agent) VALUES (?, ?, ?, ?)',
+                (hit_path, ip, referrer, ua)
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+        # Always 204 — analytics should never break UX
+        self.send_response(204)
+        self.end_headers()
+
+    def get_analytics(self):
+        parsed = urllib.parse.urlparse(self.path)
+        qs = urllib.parse.parse_qs(parsed.query)
+        days = int(qs.get('days', ['30'])[0])
+
+        conn = get_db()
+        cutoff = f"-{days} days"
+
+        total = conn.execute(
+            "SELECT COUNT(*) FROM page_hits WHERE created_at >= datetime('now', ?)", (cutoff,)
+        ).fetchone()[0]
+
+        unique = conn.execute(
+            "SELECT COUNT(DISTINCT ip) FROM page_hits WHERE created_at >= datetime('now', ?)", (cutoff,)
+        ).fetchone()[0]
+
+        path_rows = conn.execute(
+            "SELECT path, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?) GROUP BY path ORDER BY cnt DESC LIMIT 20",
+            (cutoff,)
+        ).fetchall()
+        hits_by_path = {r['path']: r['cnt'] for r in path_rows}
+
+        ref_rows = conn.execute(
+            "SELECT referrer, COUNT(*) as cnt FROM page_hits WHERE created_at >= datetime('now', ?) AND referrer != '' GROUP BY referrer ORDER BY cnt DESC LIMIT 10",
+            (cutoff,)
+        ).fetchall()
+        top_referrers = [{'referrer': r['referrer'], 'count': r['cnt']} for r in ref_rows]
+
+        recent = conn.execute(
+            "SELECT path, ip, referrer, created_at FROM page_hits ORDER BY created_at DESC LIMIT 50"
+        ).fetchall()
+        recent_hits = [{'path': r['path'], 'ip': r['ip'], 'referrer': r['referrer'], 'timestamp': r['created_at']} for r in recent]
+
+        conn.close()
+        self.ok_json({
+            'total_hits': total,
+            'unique_visitors': unique,
+            'hits_by_path': hits_by_path,
+            'top_referrers': top_referrers,
+            'recent_hits': recent_hits,
+        })
 
     # --- Honeypot ---
     def serve_honeypot_page(self, path):

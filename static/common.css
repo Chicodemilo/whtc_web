@@ -49,6 +49,20 @@ a:hover { color: #e8d5b5; }
   letter-spacing: 2px;
 }
 
+.header .nav-about,
+.header .nav-download {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  transition: color 0.15s;
+}
+
+.header .nav-about:hover { color: #c8b89a; }
+.header .nav-download:hover { color: #7a8ab8; }
+
 .header .page-title {
   font-family: 'Special Elite', cursive;
   font-size: 13px;

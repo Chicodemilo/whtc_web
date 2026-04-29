@@ -643,6 +643,134 @@
 
   .dirty-dot.show { opacity: 1; }
 
+  /* View tabs */
+  .view-tabs {
+    padding: 10px 24px;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    gap: 6px;
+  }
+
+  .view-tabs button {
+    background: none;
+    border: 1px solid #1a1a1a;
+    color: #555;
+    padding: 5px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  .view-tabs button.active {
+    border-color: #c8b89a;
+    color: #c8b89a;
+  }
+
+  .view-tabs button:hover { border-color: #333; color: #888; }
+  .view-tabs button.active:hover { border-color: #c8b89a; color: #c8b89a; }
+
+  /* Analytics */
+  .analytics-view { display: none; padding: 24px; }
+  .analytics-view.visible { display: block; }
+
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    padding: 20px;
+    background: #111;
+    border: 1px solid #1a1a1a;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 28px;
+    color: #8ab87a;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 2px;
+  }
+
+  .analytics-section-title {
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 24px 0 12px;
+  }
+
+  .analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .analytics-table th {
+    font-size: 9px;
+    color: #444;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #1a1a1a;
+    font-weight: normal;
+  }
+
+  .analytics-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #111;
+    color: #c8b89a;
+  }
+
+  .analytics-table .hit-count { color: #8ab87a; text-align: right; }
+  .analytics-table th.right { text-align: right; }
+
+  .analytics-table .ref-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .analytics-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .analytics-controls select {
+    background: #0a0a0a;
+    border: 1px solid #2a2520;
+    color: #c8b89a;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .analytics-controls .label {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 1px;
+  }
+
+  .analytics-muted {
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 1px;
+  }
+
   /* Footer */
   .footer {
     padding: 6px 24px;
@@ -691,7 +819,11 @@
   <h1>WHTC BED<span class="dirty-dot" id="dirtyDot" title="Unsaved changes"></span></h1>
   <div class="sub">Track Admin</div>
 </div>
-<div style="padding:10px 24px;border-bottom:1px solid #1a1a1a;">
+<div class="view-tabs">
+  <button class="active" onclick="switchView('tracks', this)">Tracks</button>
+  <button onclick="switchView('analytics', this)">Analytics</button>
+</div>
+<div style="padding:10px 24px;border-bottom:1px solid #1a1a1a;" id="searchBar">
   <input type="text" id="searchBox" placeholder="Search tracks..." oninput="onSearch()" style="
     background:transparent;border:1px solid #2a2520;color:#c8b89a;padding:8px 12px;
     font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;
@@ -700,6 +832,7 @@
 </div>
 </div>
 
+<div id="tracksView">
 <div class="toolbar">
   <button class="delete-sel-btn" id="deleteSelBtn" onclick="deleteSelected()">Delete Selected</button>
   <button class="export-btn" onclick="exportCSV()">Export CSV</button>
@@ -767,6 +900,25 @@
   </thead>
   <tbody id="trackBody"></tbody>
 </table>
+
+</div><!-- /tracksView -->
+
+<div class="analytics-view" id="analyticsView">
+  <div class="analytics-controls">
+    <span class="label">Period:</span>
+    <select id="analyticsDays" onchange="loadAnalytics()">
+      <option value="7">7 days</option>
+      <option value="14">14 days</option>
+      <option value="30" selected>30 days</option>
+      <option value="90">90 days</option>
+    </select>
+  </div>
+  <div class="analytics-grid" id="analyticsGrid"></div>
+  <div class="analytics-section-title">Top Referrers</div>
+  <div id="analyticsReferrers"><span class="analytics-muted">loading...</span></div>
+  <div class="analytics-section-title">Recent Hits</div>
+  <div id="analyticsRecent"><span class="analytics-muted">loading...</span></div>
+</div>
 
 <div class="conflict-overlay" id="conflictOverlay">
   <div class="conflict-modal">
@@ -1602,6 +1754,88 @@ function toast(msg, isError) {
   el.textContent = msg;
   el.className = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+// --- View switching ---
+let currentView = 'tracks';
+
+function switchView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const tracksView = document.getElementById('tracksView');
+  const analyticsView = document.getElementById('analyticsView');
+  const searchBar = document.getElementById('searchBar');
+
+  if (view === 'tracks') {
+    tracksView.style.display = '';
+    analyticsView.classList.remove('visible');
+    searchBar.style.display = '';
+  } else {
+    tracksView.style.display = 'none';
+    analyticsView.classList.add('visible');
+    searchBar.style.display = 'none';
+    loadAnalytics();
+  }
+}
+
+// --- Analytics ---
+let analyticsData = null;
+
+async function loadAnalytics() {
+  const days = document.getElementById('analyticsDays').value;
+  try {
+    const resp = await fetch('/api/admin/analytics?days=' + days);
+    if (!resp.ok) throw new Error('Failed');
+    analyticsData = await resp.json();
+    renderAnalytics();
+  } catch (e) {
+    document.getElementById('analyticsGrid').innerHTML = '<span class="analytics-muted">Failed to load analytics</span>';
+  }
+}
+
+function renderAnalytics() {
+  if (!analyticsData) return;
+  const d = analyticsData;
+
+  // Stat cards
+  const paths = d.hits_by_path || {};
+  let cardsHtml = statCard(d.total_hits, 'total hits') + statCard(d.unique_visitors, 'unique ips');
+  // Add cards for top paths
+  const sortedPaths = Object.entries(paths).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  sortedPaths.forEach(([p, count]) => { cardsHtml += statCard(count, p); });
+  document.getElementById('analyticsGrid').innerHTML = cardsHtml;
+
+  // Top referrers
+  const refEl = document.getElementById('analyticsReferrers');
+  if (d.top_referrers && d.top_referrers.length > 0) {
+    let html = '<table class="analytics-table"><thead><tr><th>Referrer</th><th class="right">Hits</th></tr></thead><tbody>';
+    d.top_referrers.forEach(r => {
+      html += '<tr><td class="ref-cell">' + esc(r.referrer || '(direct)') + '</td><td class="hit-count">' + r.count + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    refEl.innerHTML = html;
+  } else {
+    refEl.innerHTML = '<span class="analytics-muted">no referrer data</span>';
+  }
+
+  // Recent hits
+  const recEl = document.getElementById('analyticsRecent');
+  if (d.recent_hits && d.recent_hits.length > 0) {
+    let html = '<div style="overflow-x:auto"><table class="analytics-table"><thead><tr><th>Timestamp</th><th>Path</th><th>IP</th><th>Referrer</th></tr></thead><tbody>';
+    d.recent_hits.forEach(h => {
+      html += '<tr><td>' + esc(h.timestamp || '') + '</td><td>' + esc(h.path) + '</td><td>' + esc(h.ip || '') + '</td><td class="ref-cell">' + esc(h.referrer || '(direct)') + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    recEl.innerHTML = html;
+  } else {
+    recEl.innerHTML = '<span class="analytics-muted">no hits recorded</span>';
+  }
+}
+
+function statCard(value, label) {
+  return '<div class="stat-card"><div class="stat-value">' + value + '</div><div class="stat-label">' + esc(label) + '</div></div>';
 }
 
 init();

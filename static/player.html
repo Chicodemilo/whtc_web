@@ -192,7 +192,8 @@
   <div class="spacer"></div>
   <span class="page-title"></span>
   <div class="spacer"></div>
-  <a href="/about" class="nav-link" style="font-size:10px;color:#555;letter-spacing:2px;text-decoration:none;text-transform:uppercase;">About</a>
+  <a href="/about" class="nav-about">[About]</a>
+  <a href="/api/tracks.csv" class="nav-download">[Download CSV]</a>
 </div>
 
 <div class="now-playing">
@@ -282,7 +283,8 @@ function renderTracklist() {
       <div class="info"><div class="title">${t.title}</div></div>
       <span class="dur">${fmt(t.dur)}</span>
     `;
-    div.onclick = () => { currentIndex = i; loadAndPlay(); };
+    div.onclick = () => { currentIndex = i; renderTracklist(); scrollToActive(); };
+    div.ondblclick = () => { currentIndex = i; loadAndPlay(); };
     tracklist.appendChild(div);
   });
 }
@@ -382,6 +384,9 @@ progressBar.onclick = (e) => {
 };
 
 loadTracks();
+
+// Record page hit
+fetch('/api/hit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({path: '/'}) }).catch(() => {});
 </script>
 </body>
 </html>
