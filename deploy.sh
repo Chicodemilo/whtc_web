@@ -1,6 +1,6 @@
 #!/bin/bash
 # WHTC Web Deploy — runs from your Mac
-# Builds image locally, ships to droplet
+# Syncs source to droplet, builds on remote
 #
 # First deploy: also copy music files and run migrate.py
 # Usage: ./deploy.sh [--init]
@@ -15,20 +15,17 @@ if [ "$1" = "--init" ]; then
     INIT=true
 fi
 
-echo "=== 1/4  Building image (linux/amd64) ==="
-docker build --platform linux/amd64 -t whtc-web .
-
-echo "=== 2/4  Transferring image to droplet ==="
-docker save whtc-web | ssh $SERVER "docker load"
-
-echo "=== 3/4  Syncing config to droplet ==="
+echo "=== 1/3  Syncing source to droplet ==="
 ssh $SERVER "mkdir -p $REMOTE_DIR"
-scp docker-compose.yml nginx.conf .env $SERVER:$REMOTE_DIR/
+rsync -avz --delete \
+    --exclude '.git' \
+    --exclude '__pycache__' \
+    --exclude '.env' \
+    --exclude 'data/' \
+    --exclude 'music/' \
+    . $SERVER:$REMOTE_DIR/
 
 if [ "$INIT" = true ]; then
-    echo "=== INIT: Copying migration script ==="
-    scp migrate.py $SERVER:$REMOTE_DIR/
-
     echo "=== INIT: Syncing music files ==="
     echo "  (This may take a while for the first sync)"
     rsync -avz --progress ../BED_Music/WHTC_BED/ $SERVER:$REMOTE_DIR/music_staging/
@@ -43,11 +40,11 @@ if [ "$INIT" = true ]; then
     echo "  # Or mount music_staging as the volume path"
 fi
 
-echo "=== 4/4  Starting containers ==="
-ssh $SERVER "cd $REMOTE_DIR && docker compose up -d --force-recreate"
+echo "=== 2/3  Building and starting containers ==="
+ssh $SERVER "cd $REMOTE_DIR && docker compose up -d --build --force-recreate"
 
 echo ""
-echo "=== Health check ==="
+echo "=== 3/3  Health check ==="
 sleep 5
 ssh $SERVER "cd $REMOTE_DIR && docker compose ps --format 'table {{.Name}}\t{{.Status}}'"
 
