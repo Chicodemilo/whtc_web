@@ -37,6 +37,36 @@
     font-size: 16px;
     color: #e8d5b5;
     line-height: 1.3;
+    overflow: hidden;
+  }
+
+  .now-playing .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .now-playing .title-text {
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .loading-anim {
+    font-family: 'Special Elite', cursive;
+    font-size: 12px;
+    color: #555;
+    letter-spacing: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: transform 0.35s ease-in, opacity 0.35s ease-in;
+  }
+
+  .loading-anim.scroll-off {
+    transform: translateY(-30px);
+    opacity: 0;
   }
 
   .now-playing .play-count {
@@ -98,11 +128,16 @@
     height: 40px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.15s;
+  }
+
+  .controls button svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
   }
 
   .controls button:hover {
@@ -113,8 +148,12 @@
   .controls button.play-btn {
     width: 52px;
     height: 52px;
-    font-size: 20px;
     border-color: #c8b89a;
+  }
+
+  .controls button.play-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .controls button.active {
@@ -212,7 +251,12 @@
 
 <div class="now-playing">
   <div class="label">Now Playing</div>
-  <div class="track-name" id="nowPlaying">&mdash;</div>
+  <div class="track-name" id="nowPlaying">
+    <div class="title-row">
+      <span class="title-text" id="titleText">&mdash;</span>
+      <span class="loading-anim" id="loadingText"></span>
+    </div>
+  </div>
   <div class="play-count" id="nowPlayCount"></div>
 </div>
 
@@ -225,11 +269,11 @@
 </div>
 
 <div class="controls">
-  <button id="shuffleBtn" title="Shuffle">&#10574;</button>
-  <button id="prevBtn" title="Previous">&#9198;</button>
-  <button class="play-btn" id="playBtn" title="Play">&#9654;</button>
-  <button id="nextBtn" title="Next">&#9197;</button>
-  <button id="loopBtn" title="Loop">&#10227;</button>
+  <button id="shuffleBtn" title="Shuffle"><svg viewBox="0 0 512 512"><path d="M403.8 34.4c12-5 25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-32-32 0c-10.1 0-19.6 4.7-25.6 12.8L284 229.3 244 176l31.2-41.6C293.3 110.2 321.8 96 352 96l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6zM164 282.7L204 336l-31.2 41.6C154.7 401.8 126.2 416 96 416l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c10.1 0 19.6-4.7 25.6-12.8L164 282.7zm274.6 188c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6l0-32-32 0c-30.2 0-58.7-14.2-76.8-38.4L121.6 172.8c-6-8.1-15.5-12.8-25.6-12.8l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c30.2 0 58.7 14.2 76.8 38.4L326.4 339.2c6 8.1 15.5 12.8 25.6 12.8l32 0 0-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64z"/></svg></button>
+  <button id="prevBtn" title="Previous"><svg viewBox="0 0 320 512"><path d="M267.5 440.6c9.5 7.9 22.8 9.7 34.1 4.4s18.4-16.6 18.4-29l0-320c0-12.4-7.2-23.7-18.4-29s-24.5-3.6-34.1 4.4l-192 160L64 241 64 96c0-17.7-14.3-32-32-32S0 78.3 0 96L0 416c0 17.7 14.3 32 32 32s32-14.3 32-32l0-145 11.5 9.6 192 160z"/></svg></button>
+  <button class="play-btn" id="playBtn" title="Play"><svg viewBox="0 0 384 512"><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></button>
+  <button id="nextBtn" title="Next"><svg viewBox="0 0 320 512"><path d="M52.5 440.6c-9.5 7.9-22.8 9.7-34.1 4.4S0 428.4 0 416L0 96C0 83.6 7.2 72.3 18.4 67s24.5-3.6 34.1 4.4l192 160L256 241l0-145c0-17.7 14.3-32 32-32s32 14.3 32 32l0 320c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-145-11.5 9.6-192 160z"/></svg></button>
+  <button id="loopBtn" title="Loop"><svg viewBox="0 0 512 512"><path d="M0 224c0 17.7 14.3 32 32 32s32-14.3 32-32c0-53 43-96 96-96l160 0 0 32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c12.5-12.5 12.5-32.8 0-45.3l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S320 19.1 320 32l0 32L160 64C71.6 64 0 135.6 0 224zm512 64c0-17.7-14.3-32-32-32s-32 14.3-32 32c0 53-43 96-96 96l-160 0 0-32c0-12.9-7.8-24.6-19.8-29.6s-25.7-2.2-34.9 6.9l-64 64c-12.5 12.5-12.5 32.8 0 45.3l64 64c9.2 9.2 22.9 11.9 34.9 6.9s19.8-16.6 19.8-29.6l0-32 160 0c88.4 0 160-71.6 160-160z"/></svg></button>
 </div>
 
 <div class="tracklist-wrap" id="tracklist">
@@ -258,7 +302,8 @@ let isShuffled = false;
 let isLooping = false;
 let playOrder = [];
 
-const nowPlaying = document.getElementById('nowPlaying');
+const titleText = document.getElementById('titleText');
+const loadingTextEl = document.getElementById('loadingText');
 const playBtn = document.getElementById('playBtn');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -269,6 +314,48 @@ const progressFill = document.getElementById('progressFill');
 const elapsed = document.getElementById('elapsed');
 const remaining = document.getElementById('remaining');
 const tracklist = document.getElementById('tracklist');
+
+const playSVG = '<svg viewBox="0 0 384 512"><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg>';
+const pauseSVG = '<svg viewBox="0 0 320 512"><path d="M48 64C21.5 64 0 85.5 0 112L0 400c0 26.5 21.5 48 48 48l32 0c26.5 0 48-21.5 48-48l0-288c0-26.5-21.5-48-48-48L48 64zm192 0c-26.5 0-48 21.5-48 48l0 288c0 26.5 21.5 48 48 48l32 0c26.5 0 48-21.5 48-48l0-288c0-26.5-21.5-48-48-48l-32 0z"/></svg>';
+
+let loadingTimer = null;
+let loadingReady = false;
+
+function startLoadingAnim() {
+  clearTimeout(loadingTimer);
+  loadingTextEl.textContent = '';
+  loadingTextEl.classList.remove('scroll-off');
+  loadingReady = false;
+
+  const letters = 'LOADING'.split('');
+  let i = 0;
+
+  function typeLetter() {
+    if (i < letters.length) {
+      loadingTextEl.textContent += letters[i];
+      i++;
+      loadingTimer = setTimeout(typeLetter, 150);
+    } else {
+      if (loadingReady) dismissLoading();
+    }
+  }
+  typeLetter();
+}
+
+function dismissLoading() {
+  loadingTextEl.classList.add('scroll-off');
+  setTimeout(() => {
+    loadingTextEl.textContent = '';
+    loadingTextEl.classList.remove('scroll-off');
+  }, 350);
+}
+
+function onAudioReady() {
+  loadingReady = true;
+  if (loadingTextEl.textContent === 'LOADING') {
+    dismissLoading();
+  }
+}
 
 function fmt(s) {
   if (isNaN(s)) return '0:00';
@@ -313,11 +400,15 @@ function scrollToActive() {
 
 function loadAndPlay() {
   const t = tracks[currentIndex];
+  titleText.textContent = t.title;
+  progressFill.style.width = '0%';
+  elapsed.textContent = '0:00';
+  remaining.textContent = '-' + fmt(t.dur);
+  startLoadingAnim();
   audio.src = '/' + t.src;
   audio.play();
   isPlaying = true;
-  playBtn.textContent = '\u23F8';
-  nowPlaying.textContent = t.title;
+  playBtn.innerHTML = pauseSVG;
   document.getElementById('nowPlayCount').textContent = (t.play_count || 0) + ' plays';
   // Increment play count
   t.play_count = (t.play_count || 0) + 1;
@@ -351,8 +442,8 @@ function shuffle(arr) {
 
 playBtn.onclick = () => {
   if (!audio.src || audio.src === location.href) { loadAndPlay(); return; }
-  if (isPlaying) { audio.pause(); isPlaying = false; playBtn.textContent = '\u25B6'; }
-  else { audio.play(); isPlaying = true; playBtn.textContent = '\u23F8'; }
+  if (isPlaying) { audio.pause(); isPlaying = false; playBtn.innerHTML = playSVG; }
+  else { audio.play(); isPlaying = true; playBtn.innerHTML = pauseSVG; }
 };
 
 nextBtn.onclick = () => {
@@ -391,10 +482,12 @@ audio.ontimeupdate = () => {
   }
 };
 
+audio.oncanplay = () => onAudioReady();
+
 audio.onended = () => {
   const next = getNextIndex();
   if (next >= 0) { currentIndex = next; loadAndPlay(); }
-  else { isPlaying = false; playBtn.textContent = '\u25B6'; }
+  else { isPlaying = false; playBtn.innerHTML = playSVG; }
 };
 
 progressBar.onclick = (e) => {
